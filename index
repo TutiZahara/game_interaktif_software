@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Ular Tangga Informatika Kelas 7 - Perangkat Lunak</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Victory -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 6px solid #4f46e5;
+        }
+
+        .board-cell {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 2px 4px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .cell-even { background-color: #ffffff; color: #1e293b; }
+        .cell-odd { background-color: #f1f5f9; color: #1e293b; }
+        .cell-quiz { background-color: #fef08a !important; color: #854d0e; }
+        .cell-ladder-start { background-color: #bbf7d0 !important; }
+        .cell-snake-start { background-color: #fecaca !important; }
+
+        .player-pawn {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+            z-index: 30;
+        }
+
+        /* 3D Dice styling */
+        .dice {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-out;
+        }
+
+        .dice-side {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #ffffff 60%, #e2e8f0 100%);
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 6px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
+        }
+
+        .dot {
+            background-color: #1e293b;
+            border-radius: 50%;
+            margin: auto;
+            width: 10px;
+            height: 10px;
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.4);
+        }
+
+        /* Dice face positions */
+        .front  { transform: translateZ(30px); }
+        .back   { transform: rotateY(180deg) translateZ(30px); }
+        .right  { transform: rotateY(90deg) translateZ(30px); }
+        .left   { transform: rotateY(-90deg) translateZ(30px); }
+        .top    { transform: rotateX(90deg) translateZ(30px); }
+        .bottom { transform: rotateX(-90deg) translateZ(30px); }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        .pulse-button {
+            animation: pulse-ring 2s infinite;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between p-2 md:p-6">
+
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto w-full bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-2xl p-4 mb-4 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-600 rounded-xl text-white shadow-lg">
+                    <i class="fa-solid fa-gamepad text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">
+                        Game Ular Tangga Informatika 7
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-300 font-medium">
+                        <i class="fa-solid fa-book-bookmark text-indigo-400 mr-1"></i> Materi: Perangkat Lunak (Software)
+                    </p>
+                </div>
+            </div>
+            <div class="bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-700/80 text-right">
+                <p class="text-xs text-slate-400">Guru Pengampu:</p>
+                <p class="text-sm font-bold text-indigo-300"><i class="fa-solid fa-user-tie mr-1"></i> Tuti Zahara Putri, S.Pd.</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full flex-grow flex flex-col justify-center">
+
+        <!-- STEP 1: LOGIN FORM / PLAYER IDENTITY -->
+        <div id="login-screen" class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 md:p-10 max-w-md mx-auto w-full shadow-2xl backdrop-blur-lg">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <i class="fa-solid fa-user-astronaut text-3xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Identitas Siswa</h2>
+                <p class="text-xs text-slate-400 mt-1">Masukkan data diri untuk memulai permainan</p>
+            </div>
+
+            <form id="identity-form" onsubmit="startGame(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Nama Siswa</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="student-name" required placeholder="Masukkan Nama Lengkap"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-600 rounded-xl focus:outline-none focus:border-indigo-500 text-white placeholder-slate-500 text-sm transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kelas</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </span>
+                        <input type="text" id="student-class" required placeholder="Contoh: 7-A / 7-B"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-600 rounded-xl focus:outline-none focus:border-indigo-500 text-white placeholder-slate-500 text-sm transition">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                    class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/30 transition duration-300 flex items-center justify-center gap-2 mt-4">
+                    <span>Mulai Permainan</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- STEP 2: GAME AREA -->
+        <div id="game-screen" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Side: Board (7 cols) -->
+            <div class="lg:col-span-7 flex flex-col items-center">
+                <div class="relative w-full max-w-[550px] bg-slate-900 p-2 rounded-2xl border-2 border-indigo-500/50 shadow-2xl">
+                    <!-- Board Canvas Overlay for Snakes & Ladders SVG -->
+                    <svg id="board-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10 p-2"></svg>
+                    
+                    <!-- Grid Board -->
+                    <div id="board" class="board-grid rounded-xl overflow-hidden relative"></div>
+                </div>
+                
+                <!-- Legend / Petunjuk Warna -->
+                <div class="flex flex-wrap justify-center gap-3 mt-3 text-xs text-slate-300 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> Tangga (Naik)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span> Ular (Turun)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-yellow-300 inline-block"></span> Kuis Kuis</span>
+                </div>
+            </div>
+
+            <!-- Right Side: Control & Score Dashboard (5 cols) -->
+            <div class="lg:col-span-5 space-y-4">
+                
+                <!-- Dashboard Siswa & Skor -->
+                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl backdrop-blur-md">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                        <div>
+                            <h3 id="display-name" class="font-bold text-lg text-white">Nama Siswa</h3>
+                            <p id="display-class" class="text-xs text-indigo-400 font-semibold">Kelas 7-X</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400 block">Total Skor</span>
+                            <span id="display-score" class="text-2xl font-extrabold text-amber-400">0</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700">
+                            <span class="text-slate-400 block">Posisi</span>
+                            <span id="display-pos" class="font-bold text-indigo-300 text-base">Petak 1</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700">
+                            <span class="text-slate-400 block">Benar</span>
+                            <span id="display-correct" class="font-bold text-emerald-400 text-base">0</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700">
+                            <span class="text-slate-400 block">Salah</span>
+                            <span id="display-wrong" class="font-bold text-rose-400 text-base">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dice Controller -->
+                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col items-center justify-center text-center">
+                    <p class="text-xs text-slate-400 font-medium mb-4">Kocok dadu untuk memindahkan bidak</p>
+                    
+                    <!-- 3D Animated Dice Box -->
+                    <div class="h-24 flex items-center justify-center mb-4">
+                        <div id="dice" class="dice">
+                            <!-- Face 1 -->
+                            <div class="dice-side front"><div class="dot" style="grid-area: 2/2"></div></div>
+                            <!-- Face 2 -->
+                            <div class="dice-side back"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                            <!-- Face 3 -->
+                            <div class="dice-side right"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                            <!-- Face 4 -->
+                            <div class="dice-side left"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                            <!-- Face 5 -->
+                            <div class="dice-side top"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/2"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                            <!-- Face 6 -->
+                            <div class="dice-side bottom"><div class="dot" style="grid-area: 1/1"></div><div class="dot" style="grid-area: 1/3"></div><div class="dot" style="grid-area: 2/1"></div><div class="dot" style="grid-area: 2/3"></div><div class="dot" style="grid-area: 3/1"></div><div class="dot" style="grid-area: 3/3"></div></div>
+                        </div>
+                    </div>
+
+                    <button id="roll-btn" onclick="rollDice()" 
+                        class="pulse-button px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition duration-200 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-dice text-xl"></i> Lempar Dadu
+                    </button>
+                    
+                    <p id="game-status-text" class="text-xs text-indigo-300 mt-4 min-h-[18px]">Siap melemparkan dadu...</p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- QUIZ MODAL -->
+    <div id="quiz-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative transform transition-all scale-100">
+            <div id="quiz-header-tag" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">
+                <i class="fa-solid fa-circle-question mr-1"></i> Pertanyaan Kuis
+            </div>
+            
+            <h3 id="quiz-question" class="text-base md:text-lg font-bold text-white mb-4 leading-snug">
+                Soal kuis akan muncul di sini?
+            </h3>
+
+            <div id="quiz-options" class="space-y-2.5 mb-5">
+                <!-- Options injected via JS -->
+            </div>
+
+            <!-- Quiz Feedback Message -->
+            <div id="quiz-feedback" class="hidden p-3 rounded-xl text-xs font-semibold mb-4 text-center"></div>
+
+            <button id="quiz-submit-btn" onclick="submitAnswer()" disabled
+                class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition">
+                Jawab Pertanyaan
+            </button>
+        </div>
+    </div>
+
+    <!-- VICTORY / RESULT CERTIFICATE MODAL -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-slate-900 border-2 border-amber-500/50 rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative my-auto">
+            
+            <!-- Certificate Content (Printable) -->
+            <div id="printable-certificate" class="bg-gradient-to-b from-slate-800 to-slate-900 border-4 border-double border-amber-400/60 p-6 rounded-xl text-center relative overflow-hidden">
+                <div class="absolute -right-12 -top-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+                
+                <i class="fa-solid fa-trophy text-5xl text-amber-400 mb-3 drop-shadow-md"></i>
+                <h2 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-200 uppercase tracking-wide">
+                    Sertifikat Kelulusan Game
+                </h2>
+                <p class="text-xs text-slate-300 uppercase tracking-widest mt-1 mb-4">Kuis Informatika Kelas 7 - Perangkat Lunak</p>
+                
+                <p class="text-xs text-slate-400 italic">Diberikan kepada siswa:</p>
+                <h3 id="cert-name" class="text-xl font-bold text-white my-1 underline decoration-amber-400 decoration-2">Nama Siswa</h3>
+                <p id="cert-class" class="text-sm font-semibold text-indigo-300">Kelas 7-X</p>
+                
+                <div class="my-6 py-4 bg-slate-950/60 rounded-xl border border-slate-700/80 grid grid-cols-3 gap-2">
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Total Skor</span>
+                        <span id="cert-score" class="text-2xl font-black text-amber-400">100</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Jawaban Benar</span>
+                        <span id="cert-correct" class="text-2xl font-black text-emerald-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Jawaban Salah</span>
+                        <span id="cert-wrong" class="text-2xl font-black text-rose-400">0</span>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed mb-6">
+                    Selamat! Kamu telah berhasil menyelesaikan seluruh tantangan papan Ular Tangga dan menguasai materi <span class="text-indigo-300 font-semibold">Perangkat Lunak (Software)</span> dengan sangat baik.
+                </p>
+
+                <div class="flex justify-between items-end border-t border-slate-700 pt-4 text-left">
+                    <div class="text-xs">
+                        <p class="text-slate-400">Tanggal: <span id="cert-date" class="text-slate-200">01/01/2025</span></p>
+                        <p class="text-slate-400">Status: <span class="text-emerald-400 font-bold">LULUS</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400">Guru Pengampu:</p>
+                        <p class="text-sm font-bold text-indigo-300 mt-1">Tuti Zahara Putri, S.Pd.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <button onclick="window.print()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Cetak / Simpan Hasil
+                </button>
+                <button onclick="restartGame()" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Main Lagi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="max-w-6xl mx-auto w-full text-center py-4 text-xs text-slate-500 border-t border-slate-800 mt-6">
+        &copy; Game Ular Tangga Kuis Informatika Kelas 7 &bull; Pengampu: Tuti Zahara Putri, S.Pd.
+    </footer>
+
+    <script>
+        // --- GAME CONFIGURATION & STATE ---
+        const boardSize = 10;
+        let studentName = "";
+        let studentClass = "";
+        let currentPos = 1;
+        let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let isRolling = false;
+        let selectedOption = null;
+        let pendingMoveContext = null; // Stores target position or ladder/snake context
+
+        // Snakes & Ladders Definitions
+        const ladders = {
+            4: 14,
+            9: 31,
+            28: 84,
+            51: 67,
+            71: 91,
+            80: 99
+        };
+
+        const snakes = {
+            17: 7,
+            54: 34,
+            62: 19,
+            87: 24,
+            93: 73,
+            98: 79
+        };
+
+        // Quiz Question Bank (Informatika 7 - Software / Perangkat Lunak)
+        const questionBank = [
+            {
+                q: "Apa fungsi utama dari Perangkat Lunak (Software) pada sistem komputer?",
+                options: [
+                    "Komponen fisik yang bisa disentuh",
+                    "Kumpulan instruksi untuk menjalankan hardware",
+                    "Perangkat keras penyimpanan data",
+                    "Alat untuk menghubungkan kabel listrik"
+                ],
+                answer: 1
+            },
+            {
+                q: "Sistem Operasi (Operating System) merupakan contoh dari perangkat lunak jenis...",
+                options: [
+                    "Perangkat Lunak Aplikasi",
+                    "Perangkat Lunak Sistem",
+                    "Perangkat Lunak Pemrograman",
+                    "Malware"
+                ],
+                answer: 1
+            },
+            {
+                q: "Manakah di bawah ini yang MERUPAKAN contoh Sistem Operasi?",
+                options: [
+                    "Microsoft Word",
+                    "Google Chrome",
+                    "Microsoft Windows & Linux",
+                    "Avast Antivirus"
+                ],
+                answer: 2
+            },
+            {
+                q: "Perangkat lunak yang berfungsi mengolah kata seperti membuat surat atau dokumen adalah...",
+                options: [
+                    "Microsoft Excel atau Spreadsheet",
+                    "Microsoft Word atau Google Doc",
+                    "Adobe Photoshop",
+                    "CorelDraw"
+                ],
+                answer: 1
+            },
+            {
+                q: "Program aplikasi yang dirancang khusus untuk mengolah angka dan tabel adalah...",
+                options: [
+                    "Microsoft Excel atau spreadsheet",
+                    "PowerPoint",
+                    "Notepad",
+                    "Paint"
+                ],
+                answer: 0
+            },
+            {
+                q: "Istilah untuk perangkat lunak yang bersifat gratis dan kode sumbernya terbuka untuk dikembangkan siapa saja adalah...",
+                options: [
+                    "Shareware",
+                    "Commercial Software",
+                    "Open Source Software",
+                    "Adware"
+                ],
+                answer: 2
+            },
+            {
+                q: "Contoh software yang tergolong ke dalam Utility (Perangkat Pendukung/Utility) adalah...",
+                options: [
+                    "Antivirus dan Disk Cleaner",
+                    "Sistem Operasi Android",
+                    "Game Online",
+                    "Web Browser"
+                ],
+                answer: 0
+            },
+            {
+                q: "Aplikasi Google Chrome, Mozilla Firefox, dan Microsoft Edge dikategorikan sebagai...",
+                options: [
+                    "Pengolah Kata",
+                    "Web Browser (Peramban Web)",
+                    "Sistem Operasi",
+                    "Database Management"
+                ],
+                answer: 1
+            },
+            {
+                q: "Perangkat lunak jahat yang dirancang untuk merusak atau mencuri data komputer disebut...",
+                options: [
+                    "Freeware",
+                    "Malware / Virus",
+                    "Firmware",
+                    "Shareware"
+                ],
+                answer: 1
+            },
+            {
+                q: "Lisensi software yang memberi waktu percobaan gratis sebelum pengguna diminta membayar disebut...",
+                options: [
+                    "Open Source",
+                    "Shareware / Trialware",
+                    "Public Domain",
+                    "Freeware"
+                ],
+                answer: 1
+            },
+            {
+                q: "Perangkat lunak presentasi buatan Microsoft yang sering digunakan di sekolah adalah...",
+                options: [
+                    "Microsoft PowerPoint atau slide",
+                    "Microsoft Access",
+                    "Microsoft Outlook",
+                    "Microsoft Publisher"
+                ],
+                answer: 0
+            },
+            {
+                q: "Aplikasi pengolah gambar digital berbasis komputer di antaranya adalah...",
+                options: [
+                    "Adobe Photoshop & GIMP",
+                    "MS Word & Notepad",
+                    "VLC Media Player",
+                    "WinRAR"
+                ],
+                answer: 0
+            }
+        ];
+
+        // Build the 10x10 Snake & Ladder Board
+        function createBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            // Generate cells in zigzag order (1-100)
+            for (let row = 9; row >= 0; row--) {
+                const isEvenRow = (9 - row) % 2 === 0;
+                for (let col = 0; col < 10; col++) {
+                    const actualCol = isEvenRow ? col : 9 - col;
+                    const cellNum = row * 10 + actualCol + 1;
+
+                    const cell = document.createElement('div');
+                    cell.id = `cell-${cellNum}`;
+                    cell.className = `board-cell ${cellNum % 2 === 0 ? 'cell-even' : 'cell-odd'}`;
+
+                    // Add markers for quiz/ladder/snake
+                    if (ladders[cellNum]) {
+                        cell.classList.add('cell-ladder-start');
+                        cell.innerHTML = `<span>${cellNum}</span><i class="fa-solid fa-arrow-up text-emerald-600 text-xs absolute bottom-1 right-1"></i>`;
+                    } else if (snakes[cellNum]) {
+                        cell.classList.add('cell-snake-start');
+                        cell.innerHTML = `<span>${cellNum}</span><i class="fa-solid fa-worm text-rose-600 text-xs absolute bottom-1 right-1"></i>`;
+                    } else if (cellNum % 3 === 0 && cellNum < 100) {
+                        cell.classList.add('cell-quiz');
+                        cell.innerHTML = `<span>${cellNum}</span><i class="fa-solid fa-question text-amber-700 text-[10px] absolute bottom-1 right-1"></i>`;
+                    } else {
+                        cell.innerHTML = `<span>${cellNum}</span>`;
+                    }
+
+                    boardEl.appendChild(cell);
+                }
+            }
+
+            // Create Player Pawn
+            const pawn = document.createElement('div');
+            pawn.id = 'player-pawn';
+            pawn.className = 'player-pawn absolute w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 border-2 border-white shadow-lg flex items-center justify-center text-[10px] text-white font-bold';
+            pawn.innerHTML = '<i class="fa-solid fa-user"></i>';
+            boardEl.appendChild(pawn);
+
+            updatePawnPosition(1);
+        }
+
+        // Draw connections (ladders & snakes) overlay
+        function drawOverlayConnections() {
+            const svg = document.getElementById('board-svg');
+            svg.innerHTML = '';
+
+            const boardRect = document.getElementById('board').getBoundingClientRect();
+            if (boardRect.width === 0) return;
+
+            // Helper to get relative cell centers
+            const getCellCenter = (num) => {
+                const cell = document.getElementById(`cell-${num}`);
+                const rect = cell.getBoundingClientRect();
+                return {
+                    x: rect.left - boardRect.left + rect.width / 2,
+                    y: rect.top - boardRect.top + rect.height / 2
+                };
+            };
+
+            // Draw Ladders (Green Lines)
+            for (let [start, end] of Object.entries(ladders)) {
+                const p1 = getCellCenter(start);
+                const p2 = getCellCenter(end);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', p1.x);
+                line.setAttribute('y1', p1.y);
+                line.setAttribute('x2', p2.x);
+                line.setAttribute('y2', p2.y);
+                line.setAttribute('stroke', '#10b981');
+                line.setAttribute('stroke-width', '5');
+                line.setAttribute('stroke-dasharray', '6 3');
+                line.setAttribute('stroke-linecap', 'round');
+                line.setAttribute('opacity', '0.85');
+                svg.appendChild(line);
+            }
+
+            // Draw Snakes (Red Lines)
+            for (let [start, end] of Object.entries(snakes)) {
+                const p1 = getCellCenter(start);
+                const p2 = getCellCenter(end);
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midX = (p1.x + p2.x) / 2 + 20;
+                const midY = (p1.y + p2.y) / 2 - 20;
+                path.setAttribute('d', `M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}`);
+                path.setAttribute('stroke', '#f43f5e');
+                path.setAttribute('stroke-width', '5');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('opacity', '0.85');
+                svg.appendChild(path);
+            }
+        }
+
+        // Move pawn on board visually
+        function updatePawnPosition(pos) {
+            currentPos = pos;
+            const cell = document.getElementById(`cell-${pos}`);
+            const pawn = document.getElementById('player-pawn');
+            if (cell && pawn) {
+                pawn.style.top = `${cell.offsetTop + cell.offsetHeight / 2 - 12}px`;
+                pawn.style.left = `${cell.offsetLeft + cell.offsetWidth / 2 - 12}px`;
+            }
+            document.getElementById('display-pos').innerText = `Petak ${pos}`;
+        }
+
+        // Start Game Handler
+        function startGame(e) {
+            e.preventDefault();
+            studentName = document.getElementById('student-name').value.trim();
+            studentClass = document.getElementById('student-class').value.trim();
+
+            if (!studentName || !studentClass) return;
+
+            document.getElementById('display-name').innerText = studentName;
+            document.getElementById('display-class').innerText = `Kelas ${studentClass}`;
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            createBoard();
+            setTimeout(drawOverlayConnections, 200);
+            window.addEventListener('resize', drawOverlayConnections);
+        }
+
+        // Roll Dice Handler
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            document.getElementById('roll-btn').disabled = true;
+
+            const dice = document.getElementById('dice');
+            const statusText = document.getElementById('game-status-text');
+            statusText.innerText = "Mengocok dadu...";
+
+            const diceVal = Math.floor(Math.random() * 6) + 1;
+
+            // 3D rotation map
+            const rotations = {
+                1: 'rotateX(0deg) rotateY(0deg)',
+                2: 'rotateY(-180deg)',
+                3: 'rotateY(-90deg)',
+                4: 'rotateY(90deg)',
+                5: 'rotateX(-90deg)',
+                6: 'rotateX(90deg)'
+            };
+
+            // Add extra spins for animation
+            dice.style.transform = `rotateX(${720 + Math.random()*360}deg) rotateY(${720 + Math.random()*360}deg)`;
+
+            setTimeout(() => {
+                dice.style.transform = rotations[diceVal];
+                statusText.innerText = `Dadu menghasilkan angka ${diceVal}!`;
+
+                setTimeout(() => {
+                    movePlayer(diceVal);
+                }, 800);
+            }, 600);
+        }
+
+        // Move player stepwise
+        function movePlayer(steps) {
+            let targetPos = currentPos + steps;
+            if (targetPos > 100) {
+                targetPos = 100 - (targetPos - 100); // Bounce back if exceeding 100
+            }
+
+            let stepCount = 0;
+            const interval = setInterval(() => {
+                if (currentPos < targetPos) currentPos++;
+                else if (currentPos > targetPos) currentPos--;
+
+                updatePawnPosition(currentPos);
+                stepCount++;
+
+                if (currentPos === targetPos) {
+                    clearInterval(interval);
+                    setTimeout(() => evaluatePosition(), 400);
+                }
+            }, 250);
+        }
+
+        // Evaluate special tile landing
+        function evaluatePosition() {
+            const statusText = document.getElementById('game-status-text');
+
+            // 1. Check if landed on Ladder
+            if (ladders[currentPos]) {
+                const destination = ladders[currentPos];
+                statusText.innerText = "Narik TANGGA! Jawab kuis untuk NAIK!";
+                triggerQuiz({ type: 'LADDER', from: currentPos, to: destination });
+                return;
+            }
+
+            // 2. Check if landed on Snake
+            if (snakes[currentPos]) {
+                const destination = snakes[currentPos];
+                statusText.innerText = "Kena ULAR! Jawab kuis untuk SELAMAT!";
+                triggerQuiz({ type: 'SNAKE', from: currentPos, to: destination });
+                return;
+            }
+
+            // 3. Regular Quiz Tile (Every 3 tiles or landing tile)
+            if (currentPos % 3 === 0 && currentPos < 100) {
+                statusText.innerText = "Petak Kuis Informatik!";
+                triggerQuiz({ type: 'REGULAR', pos: currentPos });
+                return;
+            }
+
+            // Check Victory
+            if (currentPos === 100) {
+                handleVictory();
+            } else {
+                isRolling = false;
+                document.getElementById('roll-btn').disabled = false;
+                statusText.innerText = "Giliranmu berikutnya. Kocok dadu!";
+            }
+        }
+
+        // Trigger Quiz Modal
+        function triggerQuiz(context) {
+            pendingMoveContext = context;
+            selectedOption = null;
+
+            // Pick random question from bank
+            const qObj = questionBank[Math.floor(Math.random() * questionBank.length)];
+            
+            document.getElementById('quiz-question').innerText = qObj.q;
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            qObj.options.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-700/80 text-xs md:text-sm text-slate-200 transition flex items-center gap-3';
+                btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-bold text-xs text-indigo-400">${String.fromCharCode(65 + index)}</span> <span>${optText}</span>`;
+                
+                btn.onclick = () => {
+                    Array.from(optionsContainer.children).forEach(c => c.classList.remove('border-indigo-500', 'bg-indigo-600/20'));
+                    btn.classList.add('border-indigo-500', 'bg-indigo-600/20');
+                    selectedOption = index;
+                    document.getElementById('quiz-submit-btn').disabled = false;
+                };
+
+                optionsContainer.appendChild(btn);
+            });
+
+            // Store active question reference
+            document.getElementById('quiz-modal').dataset.correct = qObj.answer;
+            document.getElementById('quiz-modal').classList.remove('hidden');
+            document.getElementById('quiz-submit-btn').disabled = true;
+        }
+
+        // Submit Quiz Answer
+        function submitAnswer() {
+            if (selectedOption === null) return;
+
+            const modal = document.getElementById('quiz-modal');
+            const correctAns = parseInt(modal.dataset.correct);
+            const feedback = document.getElementById('quiz-feedback');
+            const submitBtn = document.getElementById('quiz-submit-btn');
+
+            submitBtn.disabled = true;
+
+            const isCorrect = (selectedOption === correctAns);
+
+            feedback.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-300', 'bg-rose-500/20', 'text-rose-300');
+            
+            if (isCorrect) {
+                correctCount++;
+                score += 20;
+                feedback.classList.add('bg-emerald-500/20', 'text-emerald-300');
+                feedback.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> BENAR! (+20 Skor)';
+            } else {
+                wrongCount++;
+                score = Math.max(0, score - 5);
+                feedback.classList.add('bg-rose-500/20', 'text-rose-300');
+                feedback.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> SALAH! (-5 Skor)';
+            }
+
+            // Update stats
+            document.getElementById('display-score').innerText = score;
+            document.getElementById('display-correct').innerText = correctCount;
+            document.getElementById('display-wrong').innerText = wrongCount;
+
+            // Resolve game context movement
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                resolveMoveContext(isCorrect);
+            }, 1200);
+        }
+
+        // Resolve Snake/Ladder/Bonus based on quiz answer
+        function resolveMoveContext(isCorrect) {
+            const ctx = pendingMoveContext;
+            const statusText = document.getElementById('game-status-text');
+
+            if (!ctx) return;
+
+            if (ctx.type === 'LADDER') {
+                if (isCorrect) {
+                    statusText.innerText = `Jawaban Benar! Kamu NAIK ke petak ${ctx.to}!`;
+                    updatePawnPosition(ctx.to);
+                } else {
+                    statusText.innerText = "Jawaban Salah! Gagal naik tangga.";
+                }
+            } else if (ctx.type === 'SNAKE') {
+                if (isCorrect) {
+                    statusText.innerText = "Jawaban Benar! Kamu SELAMAT dari patukan ular!";
+                } else {
+                    statusText.innerText = `Jawaban Salah! Kamu TURUN ke petak ${ctx.to}!`;
+                    updatePawnPosition(ctx.to);
+                }
+            } else if (ctx.type === 'REGULAR') {
+                if (isCorrect) {
+                    statusText.innerText = "Bonus Jawaban Benar! Maju 1 langkah ekstra!";
+                    setTimeout(() => updatePawnPosition(Math.min(100, currentPos + 1)), 400);
+                } else {
+                    statusText.innerText = "Jawaban Salah! Tetap di posisi saat ini.";
+                }
+            }
+
+            if (currentPos === 100) {
+                handleVictory();
+            } else {
+                isRolling = false;
+                document.getElementById('roll-btn').disabled = false;
+            }
+        }
+
+        // Handle Game Victory
+        function handleVictory() {
+            // Trigger Confetti
+            confetti({
+                particleCount: 120,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Populate Certificate Data
+            document.getElementById('cert-name').innerText = studentName;
+            document.getElementById('cert-class').innerText = `Kelas ${studentClass}`;
+            document.getElementById('cert-score').innerText = score;
+            document.getElementById('cert-correct').innerText = correctCount;
+            document.getElementById('cert-wrong').innerText = wrongCount;
+            
+            const now = new Date();
+            document.getElementById('cert-date').innerText = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+
+            document.getElementById('victory-modal').classList.remove('hidden');
+        }
+
+        // Restart Game
+        function restartGame() {
+            currentPos = 1;
+            score = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            isRolling = false;
+
+            document.getElementById('display-score').innerText = '0';
+            document.getElementById('display-correct').innerText = '0';
+            document.getElementById('display-wrong').innerText = '0';
+            document.getElementById('game-status-text').innerText = 'Game telah direset. Silakan kocok dadu!';
+
+            document.getElementById('victory-modal').classList.add('hidden');
+            updatePawnPosition(1);
+            document.getElementById('roll-btn').disabled = false;
+        }
+    </script>
+</body>
+</html>
